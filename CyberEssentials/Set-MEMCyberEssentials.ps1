@@ -7,10 +7,12 @@ param(
     [ValidateSet('Corporate', 'BYOD', 'Both')]
     [string]$iOS,
     [ValidateSet('Corporate', 'BYOD', 'Both')]
-    [string]$macOS
+    [string]$macOS,
+    [Parameter(Mandatory = $true)]
+    [boolean]$Assign
 )
 
-## Functions
+#region Functions
 function Get-AuthToken {
 
     <#
@@ -596,8 +598,11 @@ Function Set-MEMFilters {
 
 }
 
+#endregion
+
 Write-host "Starting Deployment..." -ForegroundColor Cyan
 Write-Host
+
 #region Authentication
 # Checking if authToken exists before running authentication
 if ($global:authToken) {
@@ -660,9 +665,16 @@ if ($Windows) {
         $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_Windows_Corporate_All") }).id
         $CompliancePolicies = Get-DeviceCompliancePolicy | Where-Object { ($_.'@odata.type').contains("windows10") -and ($_.displayName).contains("Windows_Corporate_") }
 
-        foreach ($CompliancePolicy in $CompliancePolicies) {
-            Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+        if ($Assign -eq "True") {
+            foreach ($CompliancePolicy in $CompliancePolicies) {
+                Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+            }
         }
+        else {
+            Write-Host "Please manually assign the Compliance Policies" -ForegroundColor Yellow
+            Write-Host
+        }
+
     }
     if (($Windows -eq "BYOD") -or ($Windows -eq "Both")) {
         Set-MEMCompliance -Path $CompliancePath -OS Windows -Enrolment BYOD
@@ -670,10 +682,17 @@ if ($Windows) {
 
         $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_Windows_BYOD_All") }).id
         $CompliancePolicies = Get-DeviceCompliancePolicy | Where-Object { ($_.'@odata.type').contains("windows10") -and ($_.displayName).contains("Windows_BYOD_") }
-
-        foreach ($CompliancePolicy in $CompliancePolicies) {
-            Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+        
+        if ($Assign -eq "True") {
+            foreach ($CompliancePolicy in $CompliancePolicies) {
+                Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+            }
         }
+        else {
+            Write-Host "Please manually assign the Compliance Policies" -ForegroundColor Yellow
+            Write-Host
+        }
+
     }
 }
 if ($Android) {
@@ -684,11 +703,33 @@ if ($Android) {
         Set-MEMFilters -Path $FilterPath -OS Android -Enrolment Corporate
 
         $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_Android_Enterprise_Corporate_All") }).id
+        $DeviceFilterIDOS10 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_Android_Enterprise_Corporate_OS_10") }).id
+        $DeviceFilterIDOS11 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_Android_Enterprise_Corporate_OS_11") }).id
+        $DeviceFilterIDOS12 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_Android_Enterprise_Corporate_OS_12") }).id
+
         $CompliancePolicies = Get-DeviceCompliancePolicy | Where-Object { ($_.'@odata.type').contains("android") -and ($_.displayName).contains("Android_Corporate_") }
 
-        foreach ($CompliancePolicy in $CompliancePolicies) {
-            Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+        if ($Assign -eq "True") {
+            foreach ($CompliancePolicy in $CompliancePolicies) {
+                if ($CompliancePolicy.displayName -like "Android_Corporate_MinOS_10*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS10 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "Android_Corporate_MinOS_11*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS11 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "Android_Corporate_MinOS_12*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS12 -FilterMode Include
+                }
+                else {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+                }
+            }
         }
+        else {
+            Write-Host "Please manually assign the Compliance Policies" -ForegroundColor Yellow
+            Write-Host
+        }
+
     }
     if (($Android -eq "BYOD") -or ($Android -eq "Both")) {
         Set-MEMCompliance -Path $CompliancePath -OS Android -Enrolment BYOD
@@ -697,9 +738,16 @@ if ($Android) {
         $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_Android_BYOD_Work_Profile_All") }).id
         $CompliancePolicies = Get-DeviceCompliancePolicy | Where-Object { ($_.'@odata.type').contains("android") -and ($_.displayName).contains("Android_BYOD_") }
 
-        foreach ($CompliancePolicy in $CompliancePolicies) {
-            Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+        if ($Assign -eq "True") {
+            foreach ($CompliancePolicy in $CompliancePolicies) {
+                Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+            }
         }
+        else {
+            Write-Host "Please manually assign the Compliance Policies" -ForegroundColor Yellow
+            Write-Host
+        }
+
     }
 }
 if ($iOS) {
@@ -710,22 +758,66 @@ if ($iOS) {
         Set-MEMFilters -Path $FilterPath -OS iOS -Enrolment Corporate
 
         $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_iOS_Corporate_All") }).id
+        $DeviceFilterIDOS13 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_iOS_Corporate_iOS_13") }).id
+        $DeviceFilterIDOS14 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_iOS_Corporate_iOS_14") }).id
+        $DeviceFilterIDOS15 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_iOS_Corporate_iOS_15") }).id
+
         $CompliancePolicies = Get-DeviceCompliancePolicy | Where-Object { ($_.'@odata.type').contains("ios") -and ($_.displayName).contains("iOS_Corporate_") }
 
-        foreach ($CompliancePolicy in $CompliancePolicies) {
-            Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+        if ($Assign -eq "True") {
+            foreach ($CompliancePolicy in $CompliancePolicies) {
+                if ($CompliancePolicy.displayName -like "iOS_Corporate_MinOS_13*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS13 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "iOS_Corporate_MinOS_14*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS14 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "iOS_Corporate_MinOS_15*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS15 -FilterMode Include
+                }
+                else {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+                }
+            }
         }
+        else {
+            Write-Host "Please manually assign the Compliance Policies" -ForegroundColor Yellow
+            Write-Host
+        }
+
     }
     if (($iOS -eq "BYOD") -or ($iOS -eq "Both")) {
         Set-MEMCompliance -Path $CompliancePath -OS iOS -Enrolment BYOD
         Set-MEMFilters -Path $FilterPath -OS iOS -Enrolment BYOD
 
         $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_iOS_BYOD_All") }).id
+        $DeviceFilterIDOS13 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_iOS_BYOD_iOS_13") }).id
+        $DeviceFilterIDOS14 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_iOS_BYOD_iOS_14") }).id
+        $DeviceFilterIDOS15 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_iOS_BYOD_iOS_15") }).id
+
         $CompliancePolicies = Get-DeviceCompliancePolicy | Where-Object { ($_.'@odata.type').contains("ios") -and ($_.displayName).contains("iOS_BYOD_") }
 
-        foreach ($CompliancePolicy in $CompliancePolicies) {
-            Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+        if ($Assign -eq "True") {
+            foreach ($CompliancePolicy in $CompliancePolicies) {
+                if ($CompliancePolicy.displayName -like "iOS_BYOD_MinOS_13*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS13 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "iOS_BYOD_MinOS_14*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS14 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "iOS_BYOD_MinOS_15*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS15 -FilterMode Include
+                }
+                else {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+                }
+            }
         }
+        else {
+            Write-Host "Please manually assign the Compliance Policies" -ForegroundColor Yellow
+            Write-Host
+        }
+
     }
 }
 if ($macOS) {
@@ -735,22 +827,67 @@ if ($macOS) {
         Set-MEMCompliance -Path $CompliancePath -OS macOS -Enrolment Corporate
         Set-MEMFilters -Path $FilterPath -OS macOS -Enrolment Corporate
 
-        $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_Windows_Corporate_All") }).id
+        $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_macOS_Corporate_All") }).id
+        $DeviceFilterIDOS10 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_macOS_Corporate_10.15_Catalina") }).id
+        $DeviceFilterIDOS11 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_macOS_Corporate_11_Big_Sur") }).id
+        $DeviceFilterIDOS12 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_macOS_Corporate_12_Monterey") }).id
+
         $CompliancePolicies = Get-DeviceCompliancePolicy | Where-Object { ($_.'@odata.type').contains("macOS") -and ($_.displayName).contains("MacOS_Corporate_") }
 
-        foreach ($CompliancePolicy in $CompliancePolicies) {
-            Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+        if ($Assign -eq "True") {
+            foreach ($CompliancePolicy in $CompliancePolicies) {
+                if ($CompliancePolicy.displayName -like "MacOS_Corporate_MinOS_10.15*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS10 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "MacOS_Corporate_MinOS_11*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS11 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "MacOS_Corporate_MinOS_12*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS12 -FilterMode Include
+                }
+                else {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+                }
+            }
         }
+        else {
+            Write-Host "Please manually assign the Compliance Policies" -ForegroundColor Yellow
+            Write-Host
+        }
+
     }
     if (($macOS -eq "BYOD") -or ($macOS -eq "Both")) {
         Set-MEMCompliance -Path $CompliancePath -OS macOS -Enrolment BYOD
         Set-MEMFilters -Path $FilterPath -OS macOS -Enrolment BYOD
 
-        $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_Windows_BYOD_All") }).id
+        $DeviceFilterID = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_macOS_BYOD_All") }).id
+        $DeviceFilterIDOS10 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_macOS_BYOD_10.15_Catalina") }).id
+        $DeviceFilterIDOS11 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_macOS_BYOD_11_Big_Sur") }).id
+        $DeviceFilterIDOS12 = (Get-IntuneFilter | Where-Object { ($_.displayName).contains("Filter_macOS_BYOD_12_Monterey") }).id
+
         $CompliancePolicies = Get-DeviceCompliancePolicy | Where-Object { ($_.'@odata.type').contains("macOS") -and ($_.displayName).contains("MacOS_BYOD_") }
 
-        foreach ($CompliancePolicy in $CompliancePolicies) {
-            Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+        if ($Assign -eq "True") {
+            foreach ($CompliancePolicy in $CompliancePolicies) {
+                if ($CompliancePolicy.displayName -like "MacOS_Corporate_MinOS_10.15*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS10 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "MacOS_Corporate_MinOS_11*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS11 -FilterMode Include
+                }
+                elseif ($CompliancePolicy.displayName -like "MacOS_Corporate_MinOS_12*") {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterIDOS12 -FilterMode Include
+                }
+                else {
+                    Add-DeviceCompliancePolicyAssignment -Id $CompliancePolicy.id -All Users -AssignmentType Include -FilterID $DeviceFilterID -FilterMode Include
+                }
+            }
         }
+        else {
+            Write-Host "Please manually assign the Compliance Policies" -ForegroundColor Yellow
+            Write-Host
+        }
+
     }
 }
+Write-host "Ending Deployment" -ForegroundColor Cyan
