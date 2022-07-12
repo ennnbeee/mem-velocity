@@ -829,7 +829,7 @@ Function Remove-ManagedAppPolicy() {
     
     try {
     
-        if ($id -eq "" -or $id -eq $null) {
+        if ($id -eq "" -or $null -eq $id) {
     
             write-host "No id specified for managed app policy, can't remove managed app policy..." -f Red
             write-host "Please specify id for managed app policy..." -f Red
@@ -889,7 +889,7 @@ Function Remove-ManagedAppAppConfigPolicy() {
     
     try {
     
-        if ($id -eq "" -or $id -eq $null) {
+        if ($id -eq "" -or $null -eq $id) {
     
             write-host "No id specified for managed app policy, can't remove managed app policy..." -f Red
             write-host "Please specify id for managed app policy..." -f Red
@@ -949,7 +949,7 @@ Function Remove-ManagedDeviceAppConfigPolicy() {
     
     try {
     
-        if ($id -eq "" -or $id -eq $null) {
+        if ($id -eq "" -or $null -eq $id) {
     
             write-host "No id specified for managed app policy, can't remove managed app policy..." -f Red
             write-host "Please specify id for managed app policy..." -f Red
@@ -1009,7 +1009,7 @@ Function Remove-DeviceCompliancePolicy() {
         
     try {
         
-        if ($id -eq "" -or $id -eq $null) {
+        if ($id -eq "" -or $null -eq $id) {
         
             write-host "No id specified for device compliance, can't remove compliance policy..." -f Red
             write-host "Please specify id for device compliance policy..." -f Red
@@ -1069,7 +1069,7 @@ Function Remove-DeviceConfigurationPolicy() {
     
     try {
     
-        if ($id -eq "" -or $id -eq $null) {
+        if ($id -eq "" -or $null -eq $id) {
     
             write-host "No id specified for device configuration, can't remove configuration..." -f Red
             write-host "Please specify id for device configuration..." -f Red
@@ -1129,7 +1129,7 @@ Function Remove-SettingsCatalog() {
     
     try {
     
-        if ($id -eq "" -or $id -eq $null) {
+        if ($id -eq "" -or $null -eq $id) {
     
             write-host "No id specified for device configuration, can't remove configuration..." -f Red
             write-host "Please specify id for device configuration..." -f Red
@@ -1189,7 +1189,7 @@ Function Remove-DeviceManagementScripts() {
     
     try {
     
-        if ($id -eq "" -or $id -eq $null) {
+        if ($id -eq "" -or $null -eq $id) {
     
             write-host "No id specified for device configuration, can't remove configuration..." -f Red
             write-host "Please specify id for device configuration..." -f Red
@@ -1249,7 +1249,7 @@ Function Remove-IntuneFilter() {
     
     try {
     
-        if ($id -eq "" -or $id -eq $null) {
+        if ($id -eq "" -or $null -eq $id) {
     
             write-host "No id specified for device configuration, can't remove configuration..." -f Red
             write-host "Please specify id for device configuration..." -f Red
