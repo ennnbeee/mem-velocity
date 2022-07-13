@@ -9,7 +9,9 @@ param(
     [ValidateSet('Corporate', 'BYOD', 'Both')]
     [string]$macOS,
     [Parameter(Mandatory = $true)]
-    [boolean]$Assign
+    [boolean]$Assign,
+    [Parameter(Mandatory = $true)]
+    [boolean]$ConditionalAccess
 )
 
 #region Functions
@@ -500,6 +502,7 @@ Function Add-DeviceCompliancePolicyAssignment() {
     }
     
 }
+
 Function Set-MEMCompliance {
     [CmdletBinding()]
     param(
@@ -597,11 +600,61 @@ Function Set-MEMFilters {
     
 
 }
+Function Set-ConditionAccessPolicy {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+        [string[]]$Path
+    )
 
+    $Files = Get-ChildItem $Path -Recurse -Include *.json
+
+    foreach ($file in $Files) {
+
+        $policy = Get-Content $file.FullName | ConvertFrom-Json
+
+        # Create objects for the conditions and GrantControls
+        $Conditions = $Policy.Conditions
+        $GrantControls = $Policy.GrantControls
+        $SessionControls = $Policy.SessionControls
+
+        $Parameters = @{
+            DisplayName     = $Policy.DisplayName
+            State           = $policy.State
+            Conditions      = $Conditions
+            GrantControls   = $GrantControls
+            SessionControls = $SessionControls
+        }
+
+        Try {
+            $null = New-AzureADMSConditionalAccessPolicy @Parameters
+            Write-host "Conditional Access Policy $($Policy.DisplayName) created" -ForegroundColor Green
+            Write-Host
+        }
+        Catch {
+            Write-Error "Conditional Access Policy creation failed"
+            Write-Host
+
+        }
+        
+    }
+}
 #endregion
 
 Write-host "Starting Deployment..." -ForegroundColor Cyan
 Write-Host
+
+#region Azure AD
+try {
+    Import-Module AzureADPreview
+    Connect-AzureAD
+}
+catch {
+    Write-Host "Unable to import AzureADPreview module, please install the module and try again" -ForegroundColor Yellow
+    break
+}
+
+#endregion
 
 #region Authentication
 # Checking if authToken exists before running authentication
@@ -654,6 +707,7 @@ else {
 $ScriptPath = (Get-Location).Path
 $CompliancePath = $ScriptPath + "\Compliance"
 $FilterPath = $ScriptPath + "\Filters"
+$CAPath = $ScriptPath + "\ConditionalAccess"
 
 if ($Windows) {
     Write-host "Starting Windows Deployment..." -ForegroundColor Cyan
@@ -890,4 +944,13 @@ if ($macOS) {
 
     }
 }
+
+if ($ConditionalAccess -eq "True") {
+
+    Write-Host "Importing Conditional Access Policies" -ForegroundColor Cyan
+    Write-Host "All Policies are imported as Disabled" -ForegroundColor Cyan
+    Write-Host
+    Set-ConditionAccessPolicy -Path $CAPath
+}
+
 Write-host "Ending Deployment" -ForegroundColor Cyan
