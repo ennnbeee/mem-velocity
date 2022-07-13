@@ -1,3 +1,5 @@
+
+#region Functions
 function Get-AuthToken {
 
     <#
@@ -143,7 +145,6 @@ function Get-AuthToken {
     }
     
 }
-
 Function Get-ManagedAppProtection() {
 
     <#
@@ -247,7 +248,6 @@ Function Get-ManagedAppProtection() {
     }
     
 }
-
 Function Get-ManagedAppPolicy() {
 
     <#
@@ -306,7 +306,6 @@ Function Get-ManagedAppPolicy() {
     }
         
 }
-
 Function Get-ManagedAppAppConfigPolicy() {
 
     <#
@@ -347,7 +346,6 @@ Function Get-ManagedAppAppConfigPolicy() {
     }
         
 }
-        
 Function Get-ManagedDeviceAppConfigPolicy() {
         
     <#
@@ -388,7 +386,6 @@ Function Get-ManagedDeviceAppConfigPolicy() {
     }
         
 }
-
 Function Get-IntuneFilter() {
 
     <#
@@ -436,7 +433,6 @@ Function Get-IntuneFilter() {
     }
     
 }
-
 Function Get-DeviceCompliancePolicy() {
 
     <#
@@ -486,7 +482,6 @@ Function Get-DeviceCompliancePolicy() {
     }
     
 }
-
 Function Get-DeviceConfigurationPolicy() {
 
     <#
@@ -545,7 +540,6 @@ Function Get-DeviceConfigurationPolicy() {
     }
     
 }
-
 Function Get-SoftwareUpdatePolicy() {
 
     <#
@@ -630,7 +624,6 @@ Function Get-SoftwareUpdatePolicy() {
     }
     
 }
-
 Function Get-SettingsCatalogPolicy() {
 
     <#
@@ -696,7 +689,6 @@ Function Get-SettingsCatalogPolicy() {
     }
     
 }
-
 Function Get-EndpointSecurityPolicy() {
 
     <#
@@ -738,7 +730,6 @@ Function Get-EndpointSecurityPolicy() {
     }
     
 }
-
 Function Get-DeviceManagementScripts() {
 
     <#
@@ -802,7 +793,6 @@ Function Get-DeviceManagementScripts() {
     }
     
 }
-
 Function Remove-ManagedAppPolicy() {
 
     <#
@@ -862,7 +852,6 @@ Function Remove-ManagedAppPolicy() {
     }
     
 }
-
 Function Remove-ManagedAppAppConfigPolicy() {
 
     <#
@@ -922,7 +911,6 @@ Function Remove-ManagedAppAppConfigPolicy() {
     }
     
 }
-
 Function Remove-ManagedDeviceAppConfigPolicy() {
 
     <#
@@ -982,7 +970,6 @@ Function Remove-ManagedDeviceAppConfigPolicy() {
     }
     
 }
-
 Function Remove-DeviceCompliancePolicy() {
 
     <#
@@ -1021,7 +1008,8 @@ Function Remove-DeviceCompliancePolicy() {
         
             $uri = "https://graph.microsoft.com/$graphApiVersion/$($Resource)/$id"
             Invoke-RestMethod -Uri $uri -Headers $authToken -Method Delete
-        
+            write-host "Removed Compliance Policy ID:$id" -f Green
+            write-host
         }
         
     }
@@ -1042,7 +1030,6 @@ Function Remove-DeviceCompliancePolicy() {
     }
         
 }    
-
 Function Remove-DeviceConfigurationPolicy() {
 
     <#
@@ -1081,7 +1068,8 @@ Function Remove-DeviceConfigurationPolicy() {
     
             $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)/$id"
             Invoke-RestMethod -Uri $uri -Headers $authToken -Method Delete
-    
+            write-host "Removed Configuration Profile ID:$id" -f Green
+            write-host
         }
     
     }
@@ -1102,7 +1090,6 @@ Function Remove-DeviceConfigurationPolicy() {
     }
     
 }
-
 Function Remove-SettingsCatalog() {
 
     <#
@@ -1141,7 +1128,8 @@ Function Remove-SettingsCatalog() {
     
             $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)/$id"
             Invoke-RestMethod -Uri $uri -Headers $authToken -Method Delete
-    
+            write-host "Removed Settings Catalog Profile ID:$id" -f Green
+            write-host
         }
     
     }
@@ -1162,7 +1150,6 @@ Function Remove-SettingsCatalog() {
     }
     
 }
-
 Function Remove-DeviceManagementScripts() {
 
     <#
@@ -1201,7 +1188,8 @@ Function Remove-DeviceManagementScripts() {
     
             $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)/$id"
             Invoke-RestMethod -Uri $uri -Headers $authToken -Method Delete
-    
+            write-host "Removed Device Script ID:$id" -f Green
+            write-host
         }
     
     }
@@ -1222,7 +1210,6 @@ Function Remove-DeviceManagementScripts() {
     }
     
 }
-
 Function Remove-IntuneFilter() {
 
     <#
@@ -1261,7 +1248,9 @@ Function Remove-IntuneFilter() {
     
             $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)/$id"
             Invoke-RestMethod -Uri $uri -Headers $authToken -Method Delete
-    
+            write-host "Removed Device Filter ID:$id" -f Green
+            write-host
+
         }
     
     }
@@ -1282,6 +1271,7 @@ Function Remove-IntuneFilter() {
     }
     
 }
+#endregion
 
 #region Authentication
 # Checking if authToken exists before running authentication
@@ -1330,8 +1320,28 @@ else {
 }
 
 #endregion
+$userUpn = New-Object "System.Net.Mail.MailAddress" -ArgumentList $User
+    
+if ($userUpn.Host -like "*onmicrosoft.com*") {
+    $tenant = Read-Host -Prompt "Please specify your Tenant name i.e. company.com"
+    Write-Host
+}
+else {
+    $tenant = $userUpn.Host
+}
 
 
+write-host "THIS SCRIPT IS DESTRUCTIVE WITH NO RECOVERY" -f Red
+write-host "PLEASE REVIEW THE BELOW BEFORE CONTINUING" -f Red
+write-host "IF ANY OF THESE SETTINGS ARE INCORRECT ABORT THE SCRIPT" -f Red
+write-host
+write-host "User Account: $user" -ForegroundColor Cyan
+write-host "Azure AD Tenant: $tenant" -ForegroundColor Cyan
+write-host
+Write-Warning "CONFIRM THE SETTINGS ARE CORRECT BEFORE CONTINUING" -WarningAction Inquire
+
+write-host "STARTING DELETION OF ENDPOINT MANAGER SETTINGS" -f Yellow
+write-host
 Get-ManagedAppPolicy | ForEach-Object {
     Remove-ManagedAppPolicy -id $_.Id
 }
@@ -1363,3 +1373,6 @@ Get-ManagedAppAppConfigPolicy | ForEach-Object {
 Get-ManagedDeviceAppConfigPolicy | ForEach-Object {
     Remove-ManagedDeviceAppConfigPolicy -id $_.id
 }
+write-host "DELETION OF ENDPOINT MANAGER SETTINGS COMPLETE" -f Green
+write-host
+write-host "PLEASE REVIEW ANY ERRORS AND PERFORM MANUAL CLEAN UP WHERE REQUIRED" -f Yellow
