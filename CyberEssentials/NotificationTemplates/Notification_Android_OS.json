@@ -1,0 +1,10 @@
+{
+    "id":  "7357ae10-ab51-4e91-b256-39ffde29bf71",
+    "lastModifiedDateTime":  "2022-07-14T16:50:59.9356826Z",
+    "displayName":  "Notification_Android_OS",
+    "defaultLocale":  "en-gb",
+    "brandingOptions":  "includeCompanyLogo,includeCompanyName,includeContactInformation,includeCompanyPortalLink",
+    "roleScopeTagIds":  [
+                            "0"
+                        ]
+}
